@@ -40,15 +40,27 @@ for item in items:
                   "styles-module-size_l-ai2ZG styles-module-ellipsis-A5gkK styles-module-weight_bold-Bh2pN " \
                   "stylesMarningNormal-module-root-_xKyG stylesMarningNormal-module-header-l-GrtnL']/text()"
     name = item.xpath(teg_of_name)
-    print(name)
+
 
     # Получаю цену товара
     teg_of_price = ".//strong[@class='styles-module-root-iIeZo']/span//text()"
     price = item.xpath(teg_of_price)
     price = auto_corrector(price) # Удаляю \xa0 из данных
-    
-    
-    result_dict[name[0]] = price # Создаю словарь у которого ключ - это название товара, а значение - это информация о товаре
+
+    # Получаю 1 описание
+    teg_of_discription1 = './/p[@class="styles-module-root-s4tZ2 styles-module-size_s-nEvE8 styles-module-size_s-PDQal ' \
+                         'stylesMarningNormal-module-root-_xKyG stylesMarningNormal-module-paragraph-s-HX94M"]//text()'
+    discription1 = item.xpath(teg_of_discription1)[0]
+
+    # Получаю 2 описание (более подробное)
+    teg_of_discription2 = './/p[@class="styles-module-root-s4tZ2 styles-module-size_s-nEvE8 ' \
+                          'styles-module-size_s_compensated-wyNaE styles-module-size_s-PDQal ' \
+                          'styles-module-ellipsis-A5gkK stylesMarningNormal-module-root-_xKyG ' \
+                          'stylesMarningNormal-module-paragraph-s-HX94M styles-module-noAccent-XIvJm ' \
+                          'styles-module-root_bottom-x1f86 styles-module-margin-bottom_6-SOtsv"]//text()'
+    discription2 = item.xpath(teg_of_discription2)[0]
+
+    result_dict[name[0]] = [price, discription1, discription2] # Создаю словарь у которого ключ - это название товара, а значение - это информация о товаре
 
     result_list.append(result_dict)
 
