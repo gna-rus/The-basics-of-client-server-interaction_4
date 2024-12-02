@@ -3,44 +3,55 @@ import requests
 from pprint import pprint
 from fake_useragent import UserAgent
 
-# def auto_corrector(list_text):
-#     res_list = []
-#
-#     for i in list_text:
-#         i = i.encode()
-#         res_list.append(i.replace(r'\xa', ' '))
-#     return res_list
+def auto_corrector(list_text):
+    """Функция для удаления \xa0 из полученного ответа"""
+    res_list = []
+
+    for i in range(len(list_text)):
+        res_list.append(list_text[i].replace('\xa0', '').lstrip())
+    return res_list
 
 ua = UserAgent()
-# Get a random browser user-agent string
 
 fake_user = ua.random # создаю фейкового юзера
 
 # Подготовка данных к скреппингу
 header = {'user-agent': fake_user}
 url = 'https://www.avito.ru/moskva/telefony/mobile-ASgBAgICAUSwwQ2I_Dc?context=H4sIAAAAAAAA_wFRAK7_YToyOntzOjg6ImZyb21QYWdlIjtzOjE0OiJjYXRlZ29yeVdpZGdldCI7czo5OiJmcm9tX3BhZ2UiO3M6MTQ6ImNhdGVnb3J5V2lkZ2V0Ijt9inXVTFEAAAA&f=ASgBAQECA0SwwQ2I_Dfyig6kgpQBoNkSpKKSAwFA6OsONPz92wL6_dsC~P3bAgFFxpoMFHsiZnJvbSI6NzAwMCwidG8iOjB9&s=172297_desc'
-resource = requests.get(url, headers = header)
-print(resource)
+
+# использую verify=False так как часть работы делал с рабочего компьютера. И requests.get конфликтует с какими то программами админов если нет verify=False
+resource = requests.get(url, headers = header, verify=False)
 
 
 dom = html.fromstring(resource.text)
 
-# list_board = './/div[@class="index-center-loE4V index-center_withTitle-OFT7n index-centerWide-myeQE index-center_marginTop_1-BaEJR"]'
+# Передаю xpath карточки товара содержащая основную информацию
 list_board = '//div[@class="iva-item-root-Se7z4 photo-slider-slider-ZccM3 iva-item-list-CLaiS iva-item-redesign-H4ow9 iva-item-responsive-GCo6h items-item-Reit3 items-listItem-rKPls js-catalog-item-enum"]'
 items = dom.xpath(list_board)
 
 result_list = []
+
 for item in items:
     result_dict = {}
-    teg_of_name = ".//h3[@class='styles-module-root-s3nJ7 styles-module-root-s4tZ2 styles-module-size_l-j3Csw styles-module-size_l_compensated-trWgn styles-module-size_l-ai2ZG styles-module-ellipsis-A5gkK styles-module-weight_bold-Bh2pN stylesMarningNormal-module-root-_xKyG stylesMarningNormal-module-header-l-GrtnL']/text()"
+
+    # плучаю наименование товара
+    teg_of_name = ".//h3[@class='styles-module-root-s3nJ7 styles-module-root-s4tZ2 " \
+                  "styles-module-size_l-j3Csw styles-module-size_l_compensated-trWgn " \
+                  "styles-module-size_l-ai2ZG styles-module-ellipsis-A5gkK styles-module-weight_bold-Bh2pN " \
+                  "stylesMarningNormal-module-root-_xKyG stylesMarningNormal-module-header-l-GrtnL']/text()"
     name = item.xpath(teg_of_name)
     print(name)
 
+    # Получаю цену товара
     teg_of_price = ".//strong[@class='styles-module-root-iIeZo']/span//text()"
     price = item.xpath(teg_of_price)
-    # price = auto_corrector(price)
-    print(name, price)
+    price = auto_corrector(price) # Удаляю \xa0 из данных
+    
+    
+    result_dict[name[0]] = price # Создаю словарь у которого ключ - это название товара, а значение - это информация о товаре
 
+    result_list.append(result_dict)
 
+pprint(result_list)
 
 
