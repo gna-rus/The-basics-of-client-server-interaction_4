@@ -2,36 +2,40 @@ from lxml import html
 import requests
 from pprint import pprint
 from fake_useragent import UserAgent
+import csv
+
 
 def auto_corrector(list_text):
-    """Функция для удаления \xa0 из полученного ответа"""
+    """Функция для удаления символов и слов из полученного ответа"""
     res_list = []
+    list_word_for_correct = ['\xa0', '\n', '*'] # список слов/символов для коррекцыы
 
     for i in range(len(list_text)):
-        res_list.append(list_text[i].replace('\xa0', '').lstrip())
+        for j in list_word_for_correct:
+            res_list.append(list_text[i].replace(j, '').lstrip())
     return res_list
 
 ua = UserAgent()
 
-fake_user = ua.random # создаю фейкового юзера
-
+# fake_user = ua.random # создаю фейкового юзера
+fake_user = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0'
 # Подготовка данных к скреппингу
 header = {'user-agent': fake_user}
 url = 'https://www.avito.ru/moskva/telefony/mobile-ASgBAgICAUSwwQ2I_Dc?context=H4sIAAAAAAAA_wFRAK7_YToyOntzOjg6ImZyb21QYWdlIjtzOjE0OiJjYXRlZ29yeVdpZGdldCI7czo5OiJmcm9tX3BhZ2UiO3M6MTQ6ImNhdGVnb3J5V2lkZ2V0Ijt9inXVTFEAAAA&f=ASgBAQECA0SwwQ2I_Dfyig6kgpQBoNkSpKKSAwFA6OsONPz92wL6_dsC~P3bAgFFxpoMFHsiZnJvbSI6NzAwMCwidG8iOjB9&s=172297_desc'
 
 # использую verify=False так как часть работы делал с рабочего компьютера. И requests.get конфликтует с какими то программами админов если нет verify=False
-resource = requests.get(url, headers = header, verify=False)
-
+resource = requests.get(url, headers = header)
 
 dom = html.fromstring(resource.text)
 
 # Передаю xpath карточки товара содержащая основную информацию
-list_board = '//div[@class="iva-item-root-Se7z4 photo-slider-slider-ZccM3 iva-item-list-CLaiS iva-item-redesign-H4ow9 iva-item-responsive-GCo6h items-item-Reit3 items-listItem-rKPls js-catalog-item-enum"]'
+list_board = './/div[@class="iva-item-root-Se7z4 photo-slider-slider-ZccM3 iva-item-list-CLaiS iva-item-redesign-H4ow9 iva-item-responsive-GCo6h items-item-Reit3 items-listItem-rKPls js-catalog-item-enum"]'
 items = dom.xpath(list_board)
 
 result_list = []
-
+print(resource)
 for item in items:
+
     result_dict = {}
 
     # плучаю наименование товара
@@ -39,6 +43,7 @@ for item in items:
                   "styles-module-size_l-j3Csw styles-module-size_l_compensated-trWgn " \
                   "styles-module-size_l-ai2ZG styles-module-ellipsis-A5gkK styles-module-weight_bold-Bh2pN " \
                   "stylesMarningNormal-module-root-_xKyG stylesMarningNormal-module-header-l-GrtnL']/text()"
+
     name = item.xpath(teg_of_name)
 
 
@@ -63,7 +68,24 @@ for item in items:
     result_dict[name[0]] = [price, discription1, discription2] # Создаю словарь у которого ключ - это название товара, а значение - это информация о товаре
 
     result_list.append(result_dict)
+    print(name, discription2)
+
 
 pprint(result_list)
 
 
+# Определяем имя файла
+filename = "result.csv"
+
+# Открываем файл для записи
+with open(filename, mode='w', newline='', encoding='utf-8') as file:
+    # Получаем заголовки из первого словаря
+    fieldnames = result_list[0].keys()
+
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+    # Записываем заголовки
+    writer.writeheader()
+
+    # Записываем данные
+    writer.writerows(result_list)
